@@ -111,7 +111,8 @@ def graph(code, data_filename):
 
 	for i in nodes:
 		code = [{'offset':j.offset, 'opname':j.opname, 'argval':j.argval} for j in nodes_dict[i].value]
-		code['argval'] = str(code['argval'])
+		for j in range(len(code)):
+			code[j]['argval'] = str(code[j]['argval'])
 		data['blocks'].append({'code':code})
 
 	with open(data_filename, 'w') as file:

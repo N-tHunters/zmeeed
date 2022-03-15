@@ -1,6 +1,7 @@
 import dis
 import marshal
 import json
+import sys
 
 nodes = []
 nodes_dict = {}
@@ -109,8 +110,14 @@ def graph(code, data_filename):
 	data = {'blocks':[]}
 
 	for i in nodes:
-		data['blocks'].append({'code':[{'offset':j.offset, 'opname':j.opname, 'argval':j.argval} for j in nodes_dict[i].value]})
+		code = [{'offset':j.offset, 'opname':j.opname, 'argval':j.argval} for j in nodes_dict[i].value]
+		code['argval'] = str(code['argval'])
+		data['blocks'].append({'code':code})
 
 	with open(data_filename, 'w') as file:
 		json.dump(data, file)
 
+if len(sys.argv) != 3:
+	print(f'Usage: {sys.argv[0]} <pyc path> <json path>')
+else:
+	graph(read_bytecode(sys.argv[1]), sys.argv[2])

@@ -131,9 +131,6 @@ def decompile(filename, out_filename):
 		for j in jumps:
 			edges.append([i, j])
 
-	print(edges)
-	print(decompiled_blocks)
-
 	data = {
 		'blocks':[],
 		'jumps':[]

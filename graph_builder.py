@@ -7,6 +7,8 @@ nodes = []
 nodes_dict = {}
 edges = []
 
+code_type = type((lambda x:x).__code__)
+
 class Node:
 	def __init__(self, _id, value):
 		self.id = _id
@@ -63,6 +65,24 @@ def read_bytecode(filename):
 		except:
 			pass
 		i += 1
+
+def get_type(obj):
+	if type(obj) == int:
+		return 'int'
+	elif type(obj) == str:
+		return 'str'
+	elif obj == None:
+		return 'None'
+	elif type(obj) == tuple:
+		return 'tuple'
+	elif type(obj) == list:
+		return 'list'
+	elif type(obj) == dict:
+		return 'dict'
+	elif type(obj) == code_type:
+		return 'code'
+	print(obj)
+	return 'unkown type'
 
 def graph(code, data_filename):
 	code_c = code
@@ -123,9 +143,11 @@ def graph(code, data_filename):
 			t = 1
 		elif i.color == 'red':
 			t = -1
-		data['jumps'].append([[i.id_1, i.id_2], t])
+		a = i.id_1
+		b = i.id_2
+		data['jumps'].append([[nodes.index(a), nodes.index(b)], t])
 
-	data['consts'] = code_c.co_consts
+	data['consts'] = list(map(lambda x:[str(x), get_type(x)], code_c.co_consts))
 
 	with open(data_filename, 'w') as file:
 		json.dump(data, file)

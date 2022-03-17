@@ -1,4 +1,5 @@
 from PyQt5.QtWidgets import *
+from PyQt5.QtCore import QPoint
 import sys
 import json
 import html
@@ -35,19 +36,27 @@ class MainWindow(QMainWindow):
 
             self.blocks.append(lbl)
 
+    def dragGraph(self, dx, dy):
+        for lbl in self.blocks:
+            lbl.move(lbl.pos().x() + dx, lbl.pos().y() + dy)
+
     def keyPressEvent(self, event):
         if event.key() == ord('J'):
-            for lbl in self.blocks:
-                lbl.move(lbl.pos().x(), lbl.pos().y() - 10)
+            self.dragGraph(0, -10)
         if event.key() == ord('K'):
-            for lbl in self.blocks:
-                lbl.move(lbl.pos().x(), lbl.pos().y() + 10)
+            self.dragGraph(0, 10)
         if event.key() == ord('H'):
-            for lbl in self.blocks:
-                lbl.move(lbl.pos().x() + 10, lbl.pos().y())
+            self.dragGraph(10, 0)
         if event.key() == ord('L'):
-            for lbl in self.blocks:
-                lbl.move(lbl.pos().x() - 10, lbl.pos().y())
+            self.dragGraph(-10, 0)
+
+    def mousePressEvent(self, event):
+        self.dragStartPos = event.pos()
+
+    def mouseMoveEvent(self, event):
+        relativeDrag = event.pos() - self.dragStartPos
+        self.dragStartPos = event.pos()
+        self.dragGraph(relativeDrag.x(), relativeDrag.y())
 
 
 

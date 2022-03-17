@@ -28,10 +28,19 @@ class MainWindow(QMainWindow):
 
         bGraphView = BytecodeGraphView(self)
         dGraphView = BytecodeGraphView(self)
-        constsView = QLabel("Here be constants", self)
+        constsView = ConstsView(self)
         self.tabs.addTab(bGraphView, "b graph")
         self.tabs.addTab(dGraphView, "d graph")
         self.tabs.addTab(constsView, "consts")
+
+
+class ConstsView(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setupUi()
+
+    def setupUi(self):
+        pass
 
 
 class BytecodeGraphView(QWidget):

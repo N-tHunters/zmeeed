@@ -38,6 +38,13 @@ class BytecodeGraphView(QWidget):
 
     def buildView(self):
         self.no_bytecode_lbl.hide()
+
+        for block in self.blocks:
+            block.hide()
+            del block
+        self.blocks = []
+        self.links = []
+
         y = 30
         x = self.width() // 2
 

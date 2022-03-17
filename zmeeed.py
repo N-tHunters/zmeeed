@@ -6,9 +6,15 @@ import json
 import html
 
 
+class PycAnalyzer:
+    def __init__(self, filename):
+        pass
+
+
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.analyzer = None
         self.setupUi()
 
     def setupUi(self):
@@ -18,8 +24,12 @@ class MainWindow(QMainWindow):
         exitAction = QAction('&Exit', self)
         exitAction.triggered.connect(qApp.quit)
 
+
+        openAction = QAction('&Open', self)
+
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
+        fileMenu.addAction(openAction)
         fileMenu.addAction(exitAction)
 
         self.tabs = QTabWidget(self)
@@ -135,26 +145,32 @@ class BytecodeGraphView(QWidget):
         for i, link in enumerate(self.links):
             painter.setPen(QPen(link[2], 2, Qt.SolidLine, Qt.SquareCap, Qt.BevelJoin))
             if self.block_strata[link[0]] < self.block_strata[link[1]]:
-                linkStartBlock = self.blocks[link[0]]
-                linkStartPos = linkStartBlock.pos() + QPoint(linkStartBlock.width() // 2, linkStartBlock.height())
-                linkStartPos += QPoint(link[3] * 4, 0)
-                linkEndBlock = self.blocks[link[1]]
-                linkEndPos = linkEndBlock.pos() + QPoint(linkEndBlock.width() // 2, 0)
-                midY = (linkEndPos.y() + linkStartPos.y()) // 2 + link[3] * 4
-                painter.drawLine(linkStartPos, QPoint(linkStartPos.x(), midY))
-                painter.drawLine(QPoint(linkStartPos.x(), midY), QPoint(linkEndPos.x(), midY))
-                painter.drawLine(QPoint(linkEndPos.x(), midY), linkEndPos)
+                link_start_block = self.blocks[link[0]]
+                link_start_pos = link_start_block.pos() + \
+                    QPoint(link_start_block.width() // 2, link_start_block.height())
+                link_start_pos += QPoint(link[3] * 4, 0)
+                link_end_block = self.blocks[link[1]]
+                link_end_pos = link_end_block.pos() + QPoint(link_end_block.width() // 2, 0)
+                midY = (link_end_pos.y() + link_start_pos.y()) // 2 + link[3] * 4
+                painter.drawLine(link_start_pos, QPoint(link_start_pos.x(), midY))
+                painter.drawLine(QPoint(link_start_pos.x(), midY), QPoint(link_end_pos.x(), midY))
+                painter.drawLine(QPoint(link_end_pos.x(), midY), link_end_pos)
             else:
-                linkStartBlock = self.blocks[link[0]]
-                linkStartPos = linkStartBlock.pos() + QPoint(linkStartBlock.width() // 2, linkStartBlock.height())
-                linkStartPos += QPoint(link[3] * 4, 0)
-                linkEndBlock = self.blocks[link[1]]
-                linkEndPos = linkEndBlock.pos() + QPoint(linkEndBlock.width() // 2, 0)
-                painter.drawLine(linkStartPos, QPoint(linkStartPos.x(), linkStartPos.y() + 5 + link[3] * 4))
-                painter.drawLine(QPoint(linkStartPos.x(), linkStartPos.y() + 5 + link[3] * 4), QPoint(linkStartPos.x() + linkStartBlock.width() // 2 + 5, linkStartPos.y() + 5 + link[3] * 4))
-                painter.drawLine(QPoint(linkStartPos.x() + linkStartBlock.width() // 2 + 5, linkStartPos.y() + 5 + link[3] * 4), QPoint(linkStartPos.x() + linkStartBlock.width() // 2 + 5, linkEndPos.y() - 5))
-                painter.drawLine(QPoint(linkStartPos.x() + linkStartBlock.width() // 2 + 5, linkEndPos.y() - 5), QPoint(linkEndPos.x(), linkEndPos.y() - 5))
-                painter.drawLine(QPoint(linkEndPos.x(), linkEndPos.y() - 5), linkEndPos)
+                link_start_block = self.blocks[link[0]]
+                link_start_pos = link_start_block.pos() + \
+                    QPoint(link_start_block.width() // 2, link_start_block.height())
+                link_start_pos += QPoint(link[3] * 4, 0)
+                link_end_block = self.blocks[link[1]]
+                link_end_pos = link_end_block.pos() + QPoint(link_end_block.width() // 2 - 10, 0)
+                painter.drawLine(link_start_pos,
+                                 QPoint(link_start_pos.x(), link_start_pos.y() + 5 + link[3] * 4))
+                painter.drawLine(QPoint(link_start_pos.x(), link_start_pos.y() + 5 + link[3] * 4),
+                                 QPoint(link_start_pos.x() + link_start_block.width() // 2 + 5, link_start_pos.y() + 5 + link[3] * 4))
+                painter.drawLine(QPoint(link_start_pos.x() + link_start_block.width() // 2 + 5, link_start_pos.y() + 5 + link[3] * 4),
+                                 QPoint(link_start_pos.x() + link_start_block.width() // 2 + 5, link_end_pos.y() - 5))
+                painter.drawLine(QPoint(link_start_pos.x() + link_start_block.width() // 2 + 5, link_end_pos.y() - 5),
+                                 QPoint(link_end_pos.x(), link_end_pos.y() - 5))
+                painter.drawLine(QPoint(link_end_pos.x(), link_end_pos.y() - 5), link_end_pos)
 
     def dragGraph(self, dx, dy):
         for lbl in self.blocks:

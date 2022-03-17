@@ -6,17 +6,23 @@ import json
 
 
 from ui.bytecode_graph_view import BytecodeGraphView
+from bytecode_analyzer import BytecodeAnalyzer
 
 
 class PycAnalyzer:
     def __init__(self, filename):
         self.filename = filename
+        self.bytecode_analyzer = BytecodeAnalyzer(filename)
+
+    def analyze(self):
+        self.bytecode_analyzer.analyze()
 
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.analyzer = None
+        self.analyzer = PycAnalyzer('to_compile.cpython-310.pyc')
+        self.analyzer.analyze()
         self.setupUi()
 
     def setupUi(self):
@@ -27,7 +33,8 @@ class MainWindow(QMainWindow):
         exitAction.triggered.connect(qApp.quit)
 
 
-        openAction = QAction('&Open', self)
+        openAction = QAction('&Open and analyze', self)
+        openAction.triggered.connect(self.openAndAnalyze)
 
         menuBar = self.menuBar()
         fileMenu = menuBar.addMenu('&File')
@@ -38,12 +45,19 @@ class MainWindow(QMainWindow):
         self.tabs.move(0, 20)
         self.tabs.resize(self.width(), self.height() - 40)
 
-        bGraphView = BytecodeGraphView(self)
-        dGraphView = BytecodeGraphView(self)
-        constsView = ConstsView(self)
-        self.tabs.addTab(bGraphView, "b graph")
-        self.tabs.addTab(dGraphView, "d graph")
-        self.tabs.addTab(constsView, "consts")
+        self.bGraphView = BytecodeGraphView(self)
+        self.constsView = ConstsView(self)
+        self.tabs.addTab(self.bGraphView, "b graph")
+        self.tabs.addTab(self.constsView, "consts")
+
+    def openAndAnalyze(self):
+        options = QFileDialog.Options()
+        options |= QFileDialog.DontUseNativeDialog
+        fileName, _ = QFileDialog.getOpenFileName(self, "Pick a pyc", "", "Python Bytecode (*.pyc)", options=options)
+        if fileName:
+            self.analyzer = PycAnalyzer(fileName)
+            self.analyzer.analyze()
+            self.bGraphView.buildView()
 
 
 class ConstsView(QWidget):

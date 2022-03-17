@@ -30,14 +30,27 @@ class BytecodeGraphView(QWidget):
         self.blocks = []
         self.links = []
 
+        self.no_bytecode_lbl = QLabel('No bytecode to analyze. Please pick one from File menu.', self)
+        self.no_bytecode_lbl.move(20, 20)
+
+        if self.parent.analyzer is not None:
+            self.buildView()
+
+    def buildView(self):
+        self.no_bytecode_lbl.hide()
         y = 30
         x = self.width() // 2
 
+        analyzer = self.parent.analyzer.bytecode_analyzer
 
-        for block in data['blocks']:
+        for node_id in analyzer.nodes:
+            node = analyzer.nodes_dict[node_id]
+
             block_text = ''
-            for op in block['code']:
-                offset, opname, argval = op['offset'], op['opname'], op['argval']
+            for inst in node.value:
+                offset = inst.offset
+                opname = inst.opname
+                argval = str(inst.argval)
                 argval = html.escape(argval)
                 block_text += f'<font color="gray">{offset:0>3}:</font> <font color="blue">{opname}</font> {argval}<br/>'
 
@@ -50,9 +63,10 @@ class BytecodeGraphView(QWidget):
 
         self.graph = dict()
 
-        for jump in data['jumps']:
-            from_block, to_block = jump[0]
-            self.links.append((from_block, to_block, [Qt.red, Qt.blue, Qt.green][1+jump[1]], len(self.graph.get(from_block, []))))
+        for jump in analyzer.edges:
+            from_block = jump.id_1
+            to_block = jump.id_2
+            self.links.append((from_block, to_block, eval("Qt." + jump.color), len(self.graph.get(from_block, []))))
             if self.graph.get(from_block) is None:
                 self.graph[from_block] = []
             self.graph[from_block].append(to_block)
@@ -134,16 +148,6 @@ class BytecodeGraphView(QWidget):
         for lbl in self.blocks:
             lbl.move(lbl.pos().x() + dx, lbl.pos().y() + dy)
         self.update()
-
-    def keyPressEvent(self, event):
-        if event.key() == ord('J'):
-            self.dragGraph(0, -10)
-        if event.key() == ord('K'):
-            self.dragGraph(0, 10)
-        if event.key() == ord('H'):
-            self.dragGraph(10, 0)
-        if event.key() == ord('L'):
-            self.dragGraph(-10, 0)
 
     def mousePressEvent(self, event):
         self.dragStartPos = event.globalPos()

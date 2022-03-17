@@ -90,6 +90,13 @@ def graph(code, data_filename):
 	global nodes
 	global edges
 
+	jump_ops = (
+		'POP_JUMP_IF_FALSE',
+		'POP_JUMP_IF_TRUE',
+		'JUMP_FORWARD',
+		'JUMP_ABSOLUTE'
+	)
+
 	nodes_dict = {}
 	nodes = []
 	edges = []
@@ -131,9 +138,11 @@ def graph(code, data_filename):
 	data = {'blocks':[], 'jumps':[], 'consts':[]}
 
 	for i in nodes:
-		code = [{'offset':j.offset, 'opname':j.opname, 'argval':j.argval} for j in nodes_dict[i].value]
+		code = [{'offset':j.offset, 'opname':j.opname, 'argval':j.argval, 'argtype':get_type(j.argval)} for j in nodes_dict[i].value]
 		for j in range(len(code)):
 			code[j]['argval'] = str(code[j]['argval'])
+			if code[j]['opname'] in jump_ops:
+				code[j]['jmpval'] = str(nodes.index(str(int(code[j]['argval']) // 2)))
 		data['blocks'].append({'code':code})
 
 	for i in edges:

@@ -65,6 +65,7 @@ def read_bytecode(filename):
 		i += 1
 
 def graph(code, data_filename):
+	code_c = code
 	global nodes_dict
 	global nodes
 	global edges
@@ -107,13 +108,24 @@ def graph(code, data_filename):
 			i -= 1
 		i += 1
 
-	data = {'blocks':[]}
+	data = {'blocks':[], 'jumps':[], 'consts':[]}
 
 	for i in nodes:
 		code = [{'offset':j.offset, 'opname':j.opname, 'argval':j.argval} for j in nodes_dict[i].value]
 		for j in range(len(code)):
 			code[j]['argval'] = str(code[j]['argval'])
 		data['blocks'].append({'code':code})
+
+	for i in edges:
+		if i.color == 'blue':
+			t = 0
+		elif i.color == 'green':
+			t = 1
+		elif i.color == 'red':
+			t = -1
+		data['jumps'].append([[i.id_1, i.id_2], t])
+
+	data['consts'] = code_c.co_consts
 
 	with open(data_filename, 'w') as file:
 		json.dump(data, file)

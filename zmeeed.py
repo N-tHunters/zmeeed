@@ -26,13 +26,15 @@ class MainWindow(QMainWindow):
         self.tabs.move(0, 20)
         self.tabs.resize(self.width(), self.height() - 40)
 
-        graphView = GraphView(self)
+        bGraphView = BytecodeGraphView(self)
+        dGraphView = BytecodeGraphView(self)
         constsView = QLabel("Here be constants", self)
-        self.tabs.addTab(graphView, "graph")
+        self.tabs.addTab(bGraphView, "b graph")
+        self.tabs.addTab(dGraphView, "d graph")
         self.tabs.addTab(constsView, "consts")
 
 
-class GraphView(QWidget):
+class BytecodeGraphView(QWidget):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.parent = parent

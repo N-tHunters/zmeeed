@@ -1,6 +1,11 @@
 import json
 import graphviz
 
+class Block:
+	def __init__(self, lines, parent=None):
+		self.parent = parent
+		self.lines = lines
+
 def to_str(value, t):
 	if t == 'str':
 		return '"' + value + '"'
@@ -36,7 +41,7 @@ def decompile_block(block):
 		elif i['opname'] == 'POP_JUMP_IF_FALSE':
 			condition = to_str(*stack.pop())
 			dest = i['argval']
-			jumps.append(int(i['jmpval']))
+			jumps.append([int(i['jmpval']), 'false'])
 			decompiled.append(f'if {condition}: goto {dest}')
 		elif i['opname'] == 'BINARY_ADD':
 			op_right = to_str(*stack.pop())
@@ -51,7 +56,7 @@ def decompile_block(block):
 		elif i['opname'] == 'POP_JUMP_IF_TRUE':
 			condition = to_str(*stack.pop())
 			dest = i['argval']
-			jumps.append(int(i['jmpval']))
+			jumps.append([int(i['jmpval']), 'true'])
 			decompiled.append(f'if {condition}: goto {dest}')
 		elif i['opname'] == 'RETURN_VALUE':
 			value = to_str(*stack.pop())
@@ -70,18 +75,32 @@ def decompile(filename):
 
 	for i in range(len(data['blocks'])):
 		jumps, decompiled, returns = decompile_block(data['blocks'][i])
-		decompiled_blocks.append('\n'.join(decompiled))
+		decompiled_blocks.append('\l'.join(decompiled))
 		if not returns:
-			jumps.append(i + 1)
+			if len(jumps) == 0:
+				jumps.append([i + 1, ''])
+			else:
+				if jumps[0][1] == 'true':
+					jumps.append([i + 1, 'false'])
+				else:
+					jumps.append([i + 1, 'true'])
 		for j in jumps:
 			edges.append([i, j])
+
+
 	
 	dot = graphviz.Digraph(graph_attr={'splines': 'ortho'}, node_attr={'shape':'box'})
 	for i in range(len(decompiled_blocks)):
 		dot.node(str(i), decompiled_blocks[i])
 
 	for i in edges:
-		dot.edge(str(i[0]), str(i[1]))
+		if i[1][1] == 'true':
+			color = 'green'
+		elif i[1][1] == 'false':
+			color = 'red'
+		else:
+			color = 'blue'
+		dot.edge(str(i[0]), str(i[1][0]), color=color)
 
 	dot.render('output.gv', format='png', view=True)
 

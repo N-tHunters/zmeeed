@@ -4,3 +4,4 @@ out_dec.json
 flycheck_*
 output.gv
 output.gv.png
+__pycache__

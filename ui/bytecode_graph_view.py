@@ -58,15 +58,15 @@ class BytecodeGraphView(QWidget):
             lbl.setStyleSheet('font-family: monospace; border: 1px solid gray; padding: 5px')
             lbl.adjustSize()
             lbl.installEventFilter(self)
+            lbl.show()
 
             self.blocks.append(lbl)
 
         self.graph = dict()
 
-        for jump in analyzer.edges:
-            from_block = jump.id_1
-            to_block = jump.id_2
-            self.links.append((from_block, to_block, eval("Qt." + jump.color), len(self.graph.get(from_block, []))))
+        for jump in analyzer.data['jumps']:
+            from_block, to_block = jump[0]
+            self.links.append((from_block, to_block, [Qt.red, Qt.blue, Qt.green][1+jump[1]], len(self.graph.get(from_block, []))))
             if self.graph.get(from_block) is None:
                 self.graph[from_block] = []
             self.graph[from_block].append(to_block)
@@ -108,6 +108,8 @@ class BytecodeGraphView(QWidget):
             for i, block in strata_blocks[strata]:
                 block.move(x - sum_width, y + strata_height[self.block_strata[i]])
                 sum_width -= 30 + block.width()
+
+        self.update()
 
 
     def paintEvent(self, event):

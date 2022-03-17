@@ -21,8 +21,7 @@ class PycAnalyzer:
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.analyzer = PycAnalyzer('to_compile.cpython-310.pyc')
-        self.analyzer.analyze()
+        self.analyzer = None
         self.setupUi()
 
     def setupUi(self):

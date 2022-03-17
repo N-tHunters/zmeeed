@@ -133,10 +133,6 @@ class BytecodeAnalyzer:
 
 		self.data = data
 
-		self.edges = []
-		self.nodes = []
-		self.nodes_dict = []
-
 	def addNode(self, _id, value):
 		Node(_id, value, self)
 

@@ -4,15 +4,27 @@ import sys
 
 decompiled_blocks_global = []
 
+
+class Token:
+	def __init__(self, type, value):
+		self.type = type
+		self.string = str(value)
+		self.value = value
+
+	def __str__(self):
+		return self.string
+
+
 class Line:
-	def __init__(self, string):
-		self.string = string
+	def __init__(self, tokens, number):
+		self.tokens = tokens
 
 	def toString(self, indent=0):
 		return indent * '\t' + str(self)
 
 	def __str__(self):
-		return self.string
+		return str(self.tokens)
+
 
 class Condition:
 	def __init__(self, string):
@@ -23,6 +35,7 @@ class Condition:
 
 	def __str__(self):
 		return self.string
+
 
 class Block:
 	def __init__(self, id, parent=None):
@@ -99,6 +112,12 @@ def to_str(value, t):
 		return '"' + value + '"'
 	return str(value)
 
+
+def to_list(op):
+	if type(op) == list:
+		return op
+	return [op,]
+
 def decompile_block(block):
 	stack = []
 	jumps = []
@@ -106,49 +125,95 @@ def decompile_block(block):
 	returns = False
 	for i in block['code']:
 		if i['opname'] == 'LOAD_NAME':
-			stack.append([i['argval'], 'name'])
+			# stack.append([i['argval'], 'name'])
+			stack.append(Token('name', i['argval']))
 		elif i['opname'] == 'CALL_FUNCTION':
-			func_args = ', '.join([to_str(*stack.pop()) for _ in range(int(i['argval']))][::-1])
-			func = stack.pop()[0]
-			stack.append([f'{func}({func_args})', 'name'])
+			func_args = []
+			for j in range(int(i['argval'])):
+				func_args.append(to_list(stack.pop()))
+				if j < int(i['argval']) - 1:
+					func_args.append(Token('arg_delim', ','))
+			func = to_list(stack.pop())
+			stack.append(func + [Token('call_par_left', '('),] + func_args + [Token('call_par_right', ')'),])
 		elif i['opname'] == 'STORE_NAME':
-			right = to_str(*stack.pop())
+			right = to_list(stack.pop())
 			left = i['argval']
-			decompiled.append(f'{left} = {right}')
+			decompiled.append([Token('name', left), Token('assign', '=')] + right)
 		elif i['opname'] == 'LOAD_CONST':
-			stack.append([i['argval'], i['argtype']])
+			stack.append(Token(i['argtype'], i['argval']))
 		elif i['opname'] == 'BINARY_SUBSCR':
-			index = to_str(*stack.pop())
-			obj = stack.pop()[0]
-			stack.append([f'{obj}[{index}]', 'exp'])
+			index = to_list(stack.pop())
+			obj = to_list(stack.pop())
+			stack.append(obj + [Token('ind_par_left', '['),] + index + [Token('ind_par_right', ']'),])
 		elif i['opname'] == 'COMPARE_OP':
 			op = i['argval']
-			op_right = to_str(*stack.pop())
-			op_left = to_str(*stack.pop())
-			stack.append([f'({op_left} {op} {op_right})', 'exp'])
+			op_right = to_list(stack.pop())
+			op_left = to_list(stack.pop())
+			stack.append(op_right + [Token('comp_op', op),] + op_left)
 		elif i['opname'] == 'POP_JUMP_IF_FALSE':
-			condition = to_str(*stack.pop())
+			condition = to_list(stack.pop())
 			dest = i['argval']
 			jumps.append([int(i['jmpval']), 'false'])
-			decompiled.append(f'if not {condition}: goto {dest}')
+			decompiled.append(Line([Token('if', 'if'), Token('logic_op', 'not')] + condition + [Token('block_begin', ':'), Token('goto', 'goto'), Token('num', dest)]))
 		elif i['opname'] == 'BINARY_ADD':
-			op_right = to_str(*stack.pop())
-			op_left = to_str(*stack.pop())
-			stack.append([f'({op_left} + {op_right})', 'exp'])
+			op_right = to_list(stack.pop())
+			op_left = to_list(stack.pop())
+			stack.append(op_right + [Token('math_op', '+'),] + op_left)
 		elif i['opname'] == 'POP_TOP':
-			decompiled.append(to_str(*stack.pop()))
+			decompiled.append(Line(to_list(stack.pop())))
 		elif i['opname'] == 'INPLACE_MULTIPLY':
-			op_right = to_str(*stack.pop())
-			op_left = to_str(*stack.pop())
-			stack.append([f'{op_left} * {op_right}', 'exp'])
+			op_right = to_list(stack.pop())
+			op_left = to_list(stack.pop())
+			stack.append(op_right + [Token('math_op', '*'),] + op_left)
 		elif i['opname'] == 'POP_JUMP_IF_TRUE':
-			condition = to_str(*stack.pop())
-			dest = i['argval']
+			condition = to_list(stack.pop())
+			dest = int(i['argval'])
 			jumps.append([int(i['jmpval']), 'true'])
-			decompiled.append(f'if {condition}: goto {dest}')
+			decompiled.append(Line([Token('if', 'if'),] + condition + [Token('block_begin', ':'), Token('goto', 'goto'), Token('num', dest)]))
+		elif i['opname'] == 'IMPORT_NAME':
+			fromlist = to_list(stack.pop())
+			level = to_list(stack.pop())
+			module = i['argval']
+			e = []
+			e.append(Token('name', '__import__'))
+			e.append(Token('call_par_left', '('))
+			e.append(Token('str_par_left', '\''))
+			e.append(Token('string', module))
+			e.append(Token('str_par_right', '\''))
+			e.append(Token('arg_delim', ','))
+			e.append(Token('arg_keyword_key', 'fromlist'))
+			if fromlist == None:
+				e.append(Token('none', None))
+			else:
+				e += fromlist
+			e.append(Token('arg_delim', ','))
+			e.append(Token('arg_keyword_key', 'level'))
+			e += level
+			e.append(Token('call_par_right', ')'))
+			stack.append(e)
+		elif i['opname'] == 'BUILD_LIST':
+			# elements = [to_list(stack.pop()) for _ in range(int(i['argval']))][::-1]
+			elements = []
+			for j in range(int(i['argval'])):
+				elements.append(to_list(stack.pop()))
+				if j < int(i['argval']) - 1:
+					elements.append(Token('seq_delim', ','))
+			stack.append([Token('list_par_left', '['),] + elements + [Token('list_par_right'), ']'])
+		elif i['opname'] == 'STORE_GLOBAL':
+			right = to_list(stack.pop())
+			left = Token('name', i['argval'])
+			decompiled.append(Line([left, Token('assign', '=')] + right))
+		elif i['opname'] == 'LOAD_BUILD_CLASS':
+			stack.append([Token('name', 'builtins'), Token('get_attr', '.'), Token('name', '__build_class__')])
+		elif i['opname'] == 'MAKE_FUNCTION':
+			func_name = Token(to_list(stack.pop()).string, 'func_name')
+			func_code = Token(to_list(stack.pop()).value, 'code')
+			# decompiled.append(f'def {func_name}()')
+			decompiled.append(Line([Token('def', 'def'), func_name]))
+			stack.append(func_name)
 		elif i['opname'] == 'RETURN_VALUE':
-			value = to_str(*stack.pop())
-			decompiled.append(f'return {value}')
+			value = to_list(stack.pop())
+			decompiled.append(Line([Token('ret', 'return'),] + value))
 			returns = True
 		else:
 			print('Unkown instruction:', i)

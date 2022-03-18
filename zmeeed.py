@@ -6,6 +6,8 @@ import json
 
 
 from ui.bytecode_graph_view import BytecodeGraphView
+from ui.consts_view import ConstsView
+
 from bytecode_analyzer import BytecodeAnalyzer
 
 
@@ -57,15 +59,7 @@ class MainWindow(QMainWindow):
             self.analyzer = PycAnalyzer(fileName)
             self.analyzer.analyze()
             self.bGraphView.buildView()
-
-
-class ConstsView(QWidget):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setupUi()
-
-    def setupUi(self):
-        pass
+            self.constsView.buildView()
 
 
 

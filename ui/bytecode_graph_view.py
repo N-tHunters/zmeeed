@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import QPoint, QEvent, Qt
 from PyQt5.QtGui import QPainter, QPen
-from collections import namedtuple
 import html
 import json
 
@@ -82,11 +81,19 @@ class BytecodeGraphView(QWidget):
         used = [False for i in range(len(self.blocks))]
         used[0] = True
         self.block_strata = [0 for i in range(len(self.blocks))]
+        strata_blocks = dict()
         strata_max_height = dict()
+
         while len(queue) != 0:
             block, strata = queue[0]
             self.block_strata[block] = strata
             queue.pop(0)
+
+            strata = self.block_strata[block]
+            if strata_blocks.get(strata) is None:
+                strata_blocks[strata] = []
+            strata_blocks[strata].append((block, self.blocks[block]))
+
             if strata_max_height.get(strata) is None:
                 strata_max_height[strata] = 0
             strata_max_height[strata] = max(strata_max_height[strata], self.blocks[block].height())
@@ -98,13 +105,6 @@ class BytecodeGraphView(QWidget):
         strata_height = [y]
         for strata in range(1, len(strata_max_height)):
             strata_height.append(strata_height[-1] + 30 + strata_max_height[strata-1])
-
-        strata_blocks = dict()
-        for i, block in enumerate(self.blocks):
-            strata = self.block_strata[i]
-            if strata_blocks.get(strata) is None:
-                strata_blocks[strata] = []
-            strata_blocks[strata].append((i, block))
 
         for strata in range(len(strata_max_height)):
             sum_width = 0

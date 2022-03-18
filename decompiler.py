@@ -55,7 +55,7 @@ class Decompiler:
 		self.bytecode_analyzer = bytecode_analyzer
 
 	def decompile(self):
-		data = self.bytecode_analyzerd.data
+		data = self.bytecode_analyzer.data
 
 		decompiled_blocks = []
 		edges = []

@@ -6,6 +6,7 @@ import json
 
 
 from ui.bytecode_graph_view import BytecodeGraphView
+from ui.decompile_graph_view import DecompileGraphView
 from ui.consts_view import ConstsView
 
 from bytecode_analyzer import BytecodeAnalyzer
@@ -50,8 +51,10 @@ class MainWindow(QMainWindow):
         self.tabs.resize(self.width(), self.height() - 40)
 
         self.bGraphView = BytecodeGraphView(self)
+        self.dGraphView = DecompileGraphView(self)
         self.constsView = ConstsView(self)
         self.tabs.addTab(self.bGraphView, "b graph")
+        self.tabs.addTab(self.dGraphView, "d graph")
         self.tabs.addTab(self.constsView, "consts")
 
     def openAndAnalyze(self):
@@ -62,6 +65,7 @@ class MainWindow(QMainWindow):
             self.analyzer = PycAnalyzer(fileName)
             self.analyzer.analyze()
             self.bGraphView.buildView()
+            self.dGraphView.buildView()
             self.constsView.buildView()
 
 

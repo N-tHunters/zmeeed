@@ -7,10 +7,25 @@ import json
 
 
 
-class Block(QLabel):
-    def __init__(self, ops, parent=None):
-        self.ops = ops
+class BytecodeBlock(QLabel):
+    def __init__(self, code, parent=None):
+        self.code = code
+        self.links_in = []
+        self.links_out = []
 
+        block_text = ''
+        for inst in self.code:
+            offset = inst.offset
+            opname = inst.opname
+            argval = str(inst.argval)
+            argval = html.escape(argval)
+            block_text += f'<font color="gray">{offset:0>3}:</font> <font color="blue">{opname}</font> {argval}<br/>'
+
+        super().__init__(block_text, parent)
+        self.setStyleSheet('font-family: monospace; border: 1px solid gray; padding: 5px')
+        self.adjustSize()
+        self.installEventFilter(parent)
+        self.show()
 
 
 class BytecodeGraphView(QWidget):
@@ -51,27 +66,15 @@ class BytecodeGraphView(QWidget):
 
         for node_id in analyzer.nodes:
             node = analyzer.nodes_dict[node_id]
-
-            block_text = ''
-            for inst in node.value:
-                offset = inst.offset
-                opname = inst.opname
-                argval = str(inst.argval)
-                argval = html.escape(argval)
-                block_text += f'<font color="gray">{offset:0>3}:</font> <font color="blue">{opname}</font> {argval}<br/>'
-
-            lbl = QLabel(block_text, self)
-            lbl.setStyleSheet('font-family: monospace; border: 1px solid gray; padding: 5px')
-            lbl.adjustSize()
-            lbl.installEventFilter(self)
-            lbl.show()
-
-            self.blocks.append(lbl)
+            block = BytecodeBlock(node.value, self)
+            self.blocks.append(block)
 
         self.graph = dict()
 
         for jump in analyzer.data['jumps']:
             from_block, to_block = jump[0]
+            self.blocks[from_block].links_out.append(to_block)
+            self.blocks[to_block].links_in.append(to_block)
             self.links.append((from_block, to_block, [Qt.red, Qt.blue, Qt.green][1+jump[1]], len(self.graph.get(from_block, []))))
             if self.graph.get(from_block) is None:
                 self.graph[from_block] = []

@@ -50,6 +50,50 @@ class Block:
 	def __str__(self):
 		return toString(self)
 
+class Decompiler:
+	def __init__(self, bytecode_analyzer):
+		self.bytecode_analyzer = bytecode_analyzer
+
+	def decompile(self):
+		data = self.bytecode_analyzerd.data
+
+		decompiled_blocks = []
+		edges = []
+
+		for i in range(len(data['blocks'])):
+			jumps, decompiled, returns = decompile_block(data['blocks'][i])
+			decompiled_blocks.append(decompiled)
+			if not returns:
+				if len(jumps) == 0:
+					jumps.append([i + 1, ''])
+				else:
+					if jumps[0][1] == 'true':
+						jumps.append([i + 1, 'false'])
+					else:
+						jumps.append([i + 1, 'true'])
+			for j in jumps:
+				edges.append([i, j])
+
+		data = {
+			'blocks':[],
+			'jumps':[]
+		}
+
+		for i in decompiled_blocks:
+			data['blocks'].append(i)
+
+		for i in edges:
+			if i[1][1] == 'true':
+				color_ind = 1
+			elif i[1][1] == 'false':
+				color_ind = -1
+			else:
+				color_ind = 0
+			data['jumps'].append([i[0], i[1][0], color_ind])
+
+		self.data = data
+
+
 def to_str(value, t):
 	if t == 'str':
 		return '"' + value + '"'
@@ -107,66 +151,5 @@ def decompile_block(block):
 			decompiled.append(f'return {value}')
 			returns = True
 		else:
-			print(i)
+			print('Unkown instruction:', i)
 	return jumps, decompiled, returns
-
-def decompile(filename, out_filename):
-	with open(filename) as file:
-		data = json.load(file)
-
-	decompiled_blocks = []
-	edges = []
-
-	for i in range(len(data['blocks'])):
-		jumps, decompiled, returns = decompile_block(data['blocks'][i])
-		decompiled_blocks.append(decompiled)
-		if not returns:
-			if len(jumps) == 0:
-				jumps.append([i + 1, ''])
-			else:
-				if jumps[0][1] == 'true':
-					jumps.append([i + 1, 'false'])
-				else:
-					jumps.append([i + 1, 'true'])
-		for j in jumps:
-			edges.append([i, j])
-
-	data = {
-		'blocks':[],
-		'jumps':[]
-	}
-
-	for i in decompiled_blocks:
-		data['blocks'].append(i)
-
-	for i in edges:
-		if i[1][1] == 'true':
-			color_ind = 1
-		elif i[1][1] == 'false':
-			color_ind = -1
-		else:
-			color_ind = 0
-		data['jumps'].append([i[0], i[1][0], color_ind])
-
-	with open(out_filename, 'w') as file:
-		json.dump(data, file)
-	
-	# dot = graphviz.Digraph(graph_attr={'splines': 'ortho'}, node_attr={'shape':'box'})
-	# for i in range(len(decompiled_blocks)):
-	# 	dot.node(str(i), decompiled_blocks[i])
-
-	# for i in edges:
-	# 	if i[1][1] == 'true':
-	# 		color = 'green'
-	# 	elif i[1][1] == 'false':
-	# 		color = 'red'
-	# 	else:
-	# 		color = 'blue'
-	# 	dot.edge(str(i[0]), str(i[1][0]), color=color)
-
-	# dot.render('output.gv', format='png', view=True)
-
-if len(sys.argv) != 3:
-	print(f'Usage: {sys.argv[0]} <in json path> <out json path>')
-else:
-	decompile(sys.argv[1], sys.argv[2])

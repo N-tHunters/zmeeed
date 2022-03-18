@@ -9,15 +9,18 @@ from ui.bytecode_graph_view import BytecodeGraphView
 from ui.consts_view import ConstsView
 
 from bytecode_analyzer import BytecodeAnalyzer
+from decompiler import Decompiler
 
 
 class PycAnalyzer:
     def __init__(self, filename):
         self.filename = filename
         self.bytecode_analyzer = BytecodeAnalyzer(filename)
+        self.decompiler = Decompiler(self.bytecode_analyzer)
 
     def analyze(self):
         self.bytecode_analyzer.analyze()
+        self.decompiler.decompile()
 
 
 class MainWindow(QMainWindow):

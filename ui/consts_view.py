@@ -32,6 +32,7 @@ class ConstsView(QWidget):
         for i, const in enumerate(self.parent.analyzer.bytecode_analyzer.data['consts']):
             const_text = f'<font color="gray">{i:0>3}:</font> {const[0]} (<font color="blue">{const[1]}</font>)'
             lbl = QLabel(const_text, self)
+            lbl.setStyleSheet('font-family: monospace')
             lbl.adjustSize()
             lbl.move(x, y)
             y += lbl.height() + 5

@@ -34,9 +34,6 @@ class DecompileGraphView(QWidget):
         self.setGeometry(0, 40, self.parent.width(), self.parent.height() - 40)
         self.dragStartPos = None
 
-        with open("out.json") as f:
-            data = json.load(f)
-
         self.blocks = []
         self.links = []
 

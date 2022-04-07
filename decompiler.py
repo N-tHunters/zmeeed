@@ -73,8 +73,10 @@ class Decompiler:
 		decompiled_blocks = []
 		edges = []
 
+		offset = 0
+
 		for i in range(len(data['blocks'])):
-			jumps, decompiled, returns = decompile_block(data['blocks'][i])
+			jumps, decompiled, returns = decompile_block(data['blocks'][i], offset)
 			decompiled_blocks.append(decompiled)
 			if not returns:
 				if len(jumps) == 0:
@@ -86,6 +88,7 @@ class Decompiler:
 						jumps.append([i + 1, 'true'])
 			for j in jumps:
 				edges.append([i, j])
+			offset += len(data['blocks'][i])
 
 		data = {
 			'blocks':[],
@@ -118,12 +121,14 @@ def to_list(op):
 		return op
 	return [op,]
 
-def decompile_block(block):
+def decompile_block(block, offset=0):
 	stack = []
 	jumps = []
 	decompiled = []
 	returns = False
-	for i in block['code']:
+	for j in range(len(block['code'])):
+		i = block['code'][j]
+		j = j + offset
 		if i['opname'] == 'LOAD_NAME':
 			# stack.append([i['argval'], 'name'])
 			stack.append(Token('name', i['argval']))
@@ -154,13 +159,13 @@ def decompile_block(block):
 			condition = to_list(stack.pop())
 			dest = i['argval']
 			jumps.append([int(i['jmpval']), 'false'])
-			decompiled.append(Line([Token('if', 'if'), Token('logic_op', 'not')] + condition + [Token('block_begin', ':'), Token('goto', 'goto'), Token('num', dest)]))
+			decompiled.append(Line([Token('if', 'if'), Token('logic_op', 'not')] + condition + [Token('block_begin', ':'), Token('goto', 'goto'), Token('num', dest)], j))
 		elif i['opname'] == 'BINARY_ADD':
 			op_right = to_list(stack.pop())
 			op_left = to_list(stack.pop())
 			stack.append(op_right + [Token('math_op', '+'),] + op_left)
 		elif i['opname'] == 'POP_TOP':
-			decompiled.append(Line(to_list(stack.pop())))
+			decompiled.append(Line(to_list(stack.pop()), j))
 		elif i['opname'] == 'INPLACE_MULTIPLY':
 			op_right = to_list(stack.pop())
 			op_left = to_list(stack.pop())
@@ -169,7 +174,7 @@ def decompile_block(block):
 			condition = to_list(stack.pop())
 			dest = int(i['argval'])
 			jumps.append([int(i['jmpval']), 'true'])
-			decompiled.append(Line([Token('if', 'if'),] + condition + [Token('block_begin', ':'), Token('goto', 'goto'), Token('num', dest)]))
+			decompiled.append(Line([Token('if', 'if'),] + condition + [Token('block_begin', ':'), Token('goto', 'goto'), Token('num', dest)], j))
 		elif i['opname'] == 'IMPORT_NAME':
 			fromlist = to_list(stack.pop())
 			level = to_list(stack.pop())
@@ -202,18 +207,18 @@ def decompile_block(block):
 		elif i['opname'] == 'STORE_GLOBAL':
 			right = to_list(stack.pop())
 			left = Token('name', i['argval'])
-			decompiled.append(Line([left, Token('assign', '=')] + right))
+			decompiled.append(Line([left, Token('assign', '=')] + right, j))
 		elif i['opname'] == 'LOAD_BUILD_CLASS':
 			stack.append([Token('name', 'builtins'), Token('get_attr', '.'), Token('name', '__build_class__')])
 		elif i['opname'] == 'MAKE_FUNCTION':
 			func_name = Token(to_list(stack.pop()).string, 'func_name')
 			func_code = Token(to_list(stack.pop()).value, 'code')
 			# decompiled.append(f'def {func_name}()')
-			decompiled.append(Line([Token('def', 'def'), func_name]))
+			decompiled.append(Line([Token('def', 'def'), func_name], j))
 			stack.append(func_name)
 		elif i['opname'] == 'RETURN_VALUE':
 			value = to_list(stack.pop())
-			decompiled.append(Line([Token('ret', 'return'),] + value))
+			decompiled.append(Line([Token('ret', 'return'),] + value, j))
 			returns = True
 		else:
 			print('Unkown instruction:', i)
